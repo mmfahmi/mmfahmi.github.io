@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DeceitLab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="../Deceitlab.png" type="image/x-icon">
+    <link rel="stylesheet" href="../css/template_engine.css">
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- Top Navigation Bar -->
+    <nav class="bg-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <a class="text-white font-bold text-xl" href="#">Researcher Profile</a>
+                </div>
+                <!-- LOGO -->
+                <a href="../index.html" class="flex items-center cursor-pointer no-underline">
+                    <img src="../Deceitlab.png" alt="Logo" class="h-8 w-8 mr-2">
+                    <span class="text-white font-semibold text-lg">DeceitLab<sup class="align-super text-xs">™</sup></span>
+                </a>
+                <!-- Navigation Links -->
+                <div class="hidden md:flex space-x-4">
+                    <a class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium" href="../momentary_unavailable.html">Projects</a>
+                    <!-- hide the OTP Relay Analysis section for now -->
+                    <!-- <a class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium" href="otrelay.html">OTP Relay</a> -->
+                    <a class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium" href="../androidbotnet.html">Android Botnet</a>
+                </div>
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-btn" class="text-gray-400 hover:text-white focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="md:hidden hidden px-2 pb-3 space-y-1 bg-gray-900">
+            <a class="block text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium" href="../dashboard.html">Projects</a>
+            <!-- hide the OTP Relay Analysis section for now -->
+            <!-- <a class="block text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium" href="otrelay.html">OTP Relay</a> -->
+            <a class="block text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium" href="../androidbotnet.html">Android Botnet</a>
+        </div>
+    </nav>
+
+    <h1>Overview of Template Engines</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Template Engine</th>
+                <th>Language</th>
+                <th>Syntax Example</th>
+                <th>Common Use Case</th>
+                <th>SSTI Risk</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Jinja2</td>
+                <td>Python</td>
+                <td><pre>{{ 7*7 }}</pre></td>
+                <td>Flask apps</td>
+                <td>✅ High</td>
+                <td>Most common SSTI in CTFs</td>
+            </tr>
+            <tr>
+                <td>Django Templates</td>
+                <td>Python</td>
+                <td><pre>{{ var }}, {% block %}</pre></td>
+                <td>Django framework</td>
+                <td>⚠️ Medium</td>
+                <td>Limited expression support</td>
+            </tr>
+            <tr>
+                <td>Twig</td>
+                <td>PHP</td>
+                <td><pre>{{ var }}, {% if %}</pre></td>
+                <td>Laravel, Symfony</td>
+                <td>✅ High</td>
+                <td>Inspired by Jinja2</td>
+            </tr>
+            <tr>
+                <td>Smarty</td>
+                <td>PHP</td>
+                <td><pre>{$var}</pre></td>
+                <td>Older PHP apps</td>
+                <td>✅ High</td>
+                <td>Can access PHP functions</td>
+            </tr>
+            <tr>
+                <td>Blade</td>
+                <td>PHP</td>
+                <td><pre>{{ var }}, @if()</pre></td>
+                <td>Laravel</td>
+                <td>⚠️ Low</td>
+                <td>Escapes by default, but bypasses exist</td>
+            </tr>
+            <tr>
+                <td>Velocity</td>
+                <td>Java</td>
+                <td><pre>$var, #if()</pre></td>
+                <td>Apache Velocity</td>
+                <td>✅ High</td>
+                <td>Java class access possible</td>
+            </tr>
+            <tr>
+                <td>FreeMarker</td>
+                <td>Java</td>
+                <td><pre>${var}</pre></td>
+                <td>Java web apps</td>
+                <td>✅ High</td>
+                <td>Also allows Java method access</td>
+            </tr>
+            <tr>
+                <td>Thymeleaf</td>
+                <td>Java</td>
+                <td><pre>th:text="${var}"</pre></td>
+                <td>Spring Boot</td>
+                <td>⚠️ Medium</td>
+                <td>Safer by design, but misuse possible</td>
+            </tr>
+            <tr>
+                <td>EJS</td>
+                <td>JavaScript</td>
+                <td><pre><%= var %></pre></td>
+                <td>Express apps (Node.js)</td>
+                <td>⚠️ Low</td>
+                <td>Mostly client-safe, but XSS possible</td>
+            </tr>
+            <tr>
+                <td>Pug (Jade)</td>
+                <td>JavaScript</td>
+                <td><pre>#{var} or != var</pre></td>
+                <td>Node.js (Express)</td>
+                <td>⚠️ Low</td>
+                <td>Escapes by default</td>
+            </tr>
+            <tr>
+                <td>Handlebars</td>
+                <td>JavaScript</td>
+                <td><pre>{{var}}, {{#if}}</pre></td>
+                <td>Frontend, Node.js</td>
+                <td>⚠️ Medium</td>
+                <td>SSTI via prototype pollution possible</td>
+            </tr>
+            <tr>
+                <td>Mustache</td>
+                <td>JS, Go, etc.</td>
+                <td><pre>{{var}}</pre></td>
+                <td>Lightweight templating</td>
+                <td>⚠️ Low</td>
+                <td>Logic-less, safer by design</td>
+            </tr>
+            <tr>
+                <td>Razor</td>
+                <td>C# / ASP.NET</td>
+                <td><pre>@Model.Property</pre></td>
+                <td>ASP.NET MVC</td>
+                <td>⚠️ Medium</td>
+                <td>Can be dangerous in rare cases</td>
+            </tr>
+            <tr>
+                <td>Liquid</td>
+                <td>Ruby/JS/etc.</td>
+                <td><pre>{{ var }}, {% if %}</pre></td>
+                <td>Shopify, Jekyll</td>
+                <td>⚠️ Low</td>
+                <td>Sandboxed, safer than Jinja2</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- insert picture-->
+    <div class="container mx-auto mt-12 mb-12 px-4">
+        <div class="flex justify-center">
+            <img src="../media/ChatGPT Image Jun 14, 2025, 11_52_41 AM.png" alt="Template Engine Overview"
+                 class="w-full sm:w-3/4 md:w-2/3 lg:w-1/2 xl:w-1/3 h-auto rounded-lg shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer" />
+        </div>
+    </div>
+
+<!-- Footer sticks to bottom even on short pages -->
+    <footer class="bg-gray-900 text-white w-full mt-auto">
+        <div class="max-w-7xl mx-auto px-4 py-6 text-center">
+            <p>&copy; 2025 DeceitLab<sup class="align-super text-xs">™</sup>. All rights reserved.</p>
+            <p class="mt-2">Follow me on <a href="https://instagram.com/deceitlab" class="text-blue-400 hover:underline">Instagram</a> and <a href="https://twitter.com/" class="text-blue-400 hover:underline">Twitter</a>.</p>
+        </div>
+    </footer>
+<script>
+        // Simple mobile menu toggle
+        document.getElementById('mobile-menu-btn').onclick = function() {
+            var menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+</script>
+
+
+</body>
+
+
+</html>
