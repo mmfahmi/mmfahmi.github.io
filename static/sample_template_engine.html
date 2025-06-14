@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template Engine SSTI Reference</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255, 255, 255, 0.1) 10px,
+                rgba(255, 255, 255, 0.1) 20px
+            );
+            animation: slide 20s linear infinite;
+        }
+
+        @keyframes slide {
+            0% { transform: translateX(-50px) translateY(-50px); }
+            100% { transform: translateX(0px) translateY(0px); }
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            position: relative;
+            z-index: 1;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 30px;
+            background: rgba(248, 249, 250, 0.8);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .filter-select, .search-input {
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .filter-select:focus, .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .risk-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .risk-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .risk-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .risk-badge {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .risk-high { background: #e74c3c; }
+        .risk-medium { background: #f39c12; }
+        .risk-low { background: #27ae60; }
+
+        .table-container {
+            padding: 30px;
+            overflow-x: auto;
+        }
+
+        .template-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            background: white;
+        }
+
+        .template-table th {
+            background: linear-gradient(135deg, #4a5568, #2d3748);
+            color: white;
+            padding: 20px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+        }
+
+        .template-table th:hover {
+            background: linear-gradient(135deg, #2d3748, #1a202c);
+        }
+
+        .template-table td {
+            padding: 20px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+
+        .template-table tr {
+            transition: all 0.3s ease;
+        }
+
+        .template-table tr:hover {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            transform: scale(1.01);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .template-name {
+            font-weight: 700;
+            font-size: 16px;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .template-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .icon-python { background: linear-gradient(135deg, #3776ab, #ffd43b); }
+        .icon-php { background: linear-gradient(135deg, #777bb4, #8892bf); }
+        .icon-java { background: linear-gradient(135deg, #ed8b00, #f89820); }
+        .icon-js { background: linear-gradient(135deg, #f7df1e, #f0db4f); color: #333; }
+        .icon-csharp { background: linear-gradient(135deg, #239120, #68217a); }
+        .icon-ruby { background: linear-gradient(135deg, #cc342d, #e25822); }
+
+        .language-tag {
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e0);
+            color: #4a5568;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .syntax-code {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #e74c3c;
+            border-left: 3px solid #667eea;
+            white-space: nowrap;
+            overflow-x: auto;
+        }
+
+        .use-case {
+            color: #4a5568;
+            font-style: italic;
+        }
+
+        .risk-cell {
+            text-align: center;
+        }
+
+        .notes {
+            font-size: 13px;
+            color: #666;
+            max-width: 200px;
+            line-height: 1.4;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            font-size: 18px;
+        }
+
+        .no-results-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .filter-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-input {
+                min-width: auto;
+            }
+            
+            .template-table th,
+            .template-table td {
+                padding: 15px 10px;
+                font-size: 12px;
+            }
+            
+            .template-name {
+                font-size: 14px;
+            }
+        }
+
+        .footer {
+            background: #2d3748;
+            color: white;
+            text-align: center;
+            padding: 30px;
+            margin-top: 20px;
+        }
+
+        .footer p {
+            opacity: 0.8;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 Template Engine SSTI Reference</h1>
+            <p>Comprehensive guide to Server-Side Template Injection vulnerabilities across different template engines</p>
+        </div>
+
+        <div class="controls">
+            <div class="filter-group">
+                <label for="languageFilter">Filter by Language:</label>
+                <select id="languageFilter" class="filter-select">
+                    <option value="">All Languages</option>
+                    <option value="Python">Python</option>
+                    <option value="PHP">PHP</option>
+                    <option value="Java">Java</option>
+                    <option value="JavaScript">JavaScript</option>
+                    <option value="C#">C#</option>
+                    <option value="Ruby">Ruby</option>
+                </select>
+
+                <label for="riskFilter">Filter by Risk Level:</label>
+                <select id="riskFilter" class="filter-select">
+                    <option value="">All Risk Levels</option>
+                    <option value="High">High Risk</option>
+                    <option value="Medium">Medium Risk</option>
+                    <option value="Low">Low Risk</option>
+                </select>
+
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search template engines, use cases, or notes...">
+            </div>
+
+            <div class="risk-legend">
+                <div class="risk-item">
+                    <div class="risk-badge risk-high">H</div>
+                    <span>High Risk - Critical SSTI vulnerability</span>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-badge risk-medium">M</div>
+                    <span>Medium Risk - Moderate vulnerability</span>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-badge risk-low">L</div>
+                    <span>Low Risk - Limited vulnerability</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="template-table" id="templateTable">
+                <thead>
+                    <tr>
+                        <th>Template Engine</th>
+                        <th>Language</th>
+                        <th>Syntax Example</th>
+                        <th>Common Use Case</th>
+                        <th>SSTI Risk</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Table content will be populated by JavaScript -->
+                </tbody>
+            </table>
+            <div id="noResults" class="no-results" style="display: none;">
+                <div class="no-results-icon">🔍</div>
+                <p>No template engines found matching your criteria.</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>⚠️ This reference is for educational and security testing purposes. Always test in authorized environments only.</p>
+        </div>
+    </div>
+
+    <script>
+        const templateData = [
+            {
+                name: "Jinja2",
+                language: "Python",
+                syntax: "{{ 7*7 }}",
+                useCase: "Flask apps",
+                risk: "High",
+                notes: "Most common SSTI in CTFs",
+                icon: "icon-python"
+            },
+            {
+                name: "Django Templates",
+                language: "Python",
+                syntax: "{{ var }}, {% block %}",
+                useCase: "Django framework",
+                risk: "Medium",
+                notes: "Limited expression support",
+                icon: "icon-python"
+            },
+            {
+                name: "Twig",
+                language: "PHP",
+                syntax: "{{ var }}, {% if %}",
+                useCase: "Laravel, Symfony",
+                risk: "High",
+                notes: "Inspired by Jinja2",
+                icon: "icon-php"
+            },
+            {
+                name: "Smarty",
+                language: "PHP",
+                syntax: "{$var}",
+                useCase: "Older PHP apps",
+                risk: "High",
+                notes: "Can access PHP functions",
+                icon: "icon-php"
+            },
+            {
+                name: "Blade",
+                language: "PHP",
+                syntax: "{{ var }}, @if()",
+                useCase: "Laravel",
+                risk: "Low",
+                notes: "Escapes by default, but bypasses exist",
+                icon: "icon-php"
+            },
+            {
+                name: "Velocity",
+                language: "Java",
+                syntax: "$var, #if()",
+                useCase: "Apache Velocity",
+                risk: "High",
+                notes: "Java class access possible",
+                icon: "icon-java"
+            },
+            {
+                name: "FreeMarker",
+                language: "Java",
+                syntax: "${var}",
+                useCase: "Java web apps",
+                risk: "High",
+                notes: "Also allows Java method access",
+                icon: "icon-java"
+            },
+            {
+                name: "Thymeleaf",
+                language: "Java",
+                syntax: 'th:text="${var}"',
+                useCase: "Spring Boot",
+                risk: "Medium",
+                notes: "Safer by design, but misuse possible",
+                icon: "icon-java"
+            },
+            {
+                name: "EJS",
+                language: "JavaScript",
+                syntax: "<%= var %>",
+                useCase: "Express apps (Node.js)",
+                risk: "Low",
+                notes: "Mostly client-safe, but XSS possible",
+                icon: "icon-js"
+            },
+            {
+                name: "Pug (Jade)",
+                language: "JavaScript",
+                syntax: "#{var} or != var",
+                useCase: "Node.js (Express)",
+                risk: "Low",
+                notes: "Escapes by default",
+                icon: "icon-js"
+            },
+            {
+                name: "Handlebars",
+                language: "JavaScript",
+                syntax: "{{var}}, {{#if}}",
+                useCase: "Frontend, Node.js",
+                risk: "Medium",
+                notes: "SSTI via prototype pollution possible",
+                icon: "icon-js"
+            },
+            {
+                name: "Mustache",
+                language: "JavaScript",
+                syntax: "{{var}}",
+                useCase: "Lightweight templating",
+                risk: "Low",
+                notes: "Logic-less, safer by design",
+                icon: "icon-js"
+            },
+            {
+                name: "Razor",
+                language: "C#",
+                syntax: "@Model.Property",
+                useCase: "ASP.NET MVC",
+                risk: "Medium",
+                notes: "Can be dangerous in rare cases",
+                icon: "icon-csharp"
+            },
+            {
+                name: "Liquid",
+                language: "Ruby",
+                syntax: "{{ var }}, {% if %}",
+                useCase: "Shopify, Jekyll",
+                risk: "Low",
+                notes: "Sandboxed, safer than Jinja2",
+                icon: "icon-ruby"
+            }
+        ];
+
+        function getRiskBadge(risk) {
+            const riskClass = `risk-${risk.toLowerCase()}`;
+            const riskLetter = risk.charAt(0);
+            return `<div class="risk-badge ${riskClass}">${riskLetter}</div>`;
+        }
+
+        function renderTable(data) {
+            const tableBody = document.getElementById('tableBody');
+            const noResults = document.getElementById('noResults');
+            
+            if (data.length === 0) {
+                tableBody.innerHTML = '';
+                noResults.style.display = 'block';
+                return;
+            }
+            
+            noResults.style.display = 'none';
+            
+            tableBody.innerHTML = data.map(item => `
+                <tr>
+                    <td>
+                        <div class="template-name">
+                            <div class="template-icon ${item.icon}">${item.name.substring(0, 2).toUpperCase()}</div>
+                            <strong>${item.name}</strong>
+                        </div>
+                    </td>
+                    <td><span class="language-tag">${item.language}</span></td>
+                    <td><code class="syntax-code">${item.syntax}</code></td>
+                    <td><span class="use-case">${item.useCase}</span></td>
+                    <td class="risk-cell">${getRiskBadge(item.risk)}</td>
+                    <td><span class="notes">${item.notes}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function filterData() {
+            const languageFilter = document.getElementById('languageFilter').value;
+            const riskFilter = document.getElementById('riskFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filteredData = templateData;
+            
+            if (languageFilter) {
+                filteredData = filteredData.filter(item => item.language === languageFilter);
+            }
+            
+            if (riskFilter) {
+                filteredData = filteredData.filter(item => item.risk === riskFilter);
+            }
+            
+            if (searchTerm) {
+                filteredData = filteredData.filter(item =>
+                    item.name.toLowerCase().includes(searchTerm) ||
+                    item.language.toLowerCase().includes(searchTerm) ||
+                    item.syntax.toLowerCase().includes(searchTerm) ||
+                    item.useCase.toLowerCase().includes(searchTerm) ||
+                    item.notes.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            renderTable(filteredData);
+        }
+
+        // Event listeners
+        document.getElementById('languageFilter').addEventListener('change', filterData);
+        document.getElementById('riskFilter').addEventListener('change', filterData);
+        document.getElementById('searchInput').addEventListener('input', filterData);
+
+        // Initial render
+        renderTable(templateData);
+    </script>
+</body>
+</html>
